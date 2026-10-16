@@ -128,10 +128,6 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
     if hl2_launcher.exists():
         patch_launcher_binary(hl2_launcher)
 
-    l4d2_bin = app_dir / "Left4Dead2"
-    if hl2_launcher.exists():
-        shutil.copy2(hl2_launcher, l4d2_bin)
-
     # 5. Inject customized Info.plist for Left 4 Dead 2
     custom_plist = project_root / "ios" / "Info.plist"
     if custom_plist.exists():
@@ -152,15 +148,32 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
     # 7. Inject pre-configured settings.bin and commandline.txt
     generate_settings_bin(app_dir / "settings.bin")
 
-    # Inject fallback hl2/gameinfo.txt directly in the app bundle
-    app_hl2_gameinfo = app_dir / "hl2" / "gameinfo.txt"
-    app_hl2_gameinfo.parent.mkdir(parents=True, exist_ok=True)
-    with open(app_hl2_gameinfo, 'w', encoding='utf-8') as f:
-        f.write('"GameInfo"\n{\n\tgame\t\t"Left 4 Dead 2"\n\ttitle\t\t"LEFT 4 DEAD 2"\n\ttype\t\tmultiplayer_only\n\n\tFileSystem\n\t{\n\t\tSteamAppId\t\t550\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t|gameinfo_path|../left4dead2\n\t\t\tGame\t\t|gameinfo_path|.\n\t\t\tGame\t\tleft4dead2\n\t\t\tGame\t\thl2\n\t\t}\n\t}\n}\n')
-    print("[+] Injected fallback hl2/gameinfo.txt inside app bundle")
-    
-    # Also generate in export_for_ios so user can drop it into Documents
+    # Inject verified gameinfo.txt for left4dead2 and hl2 in the app bundle
     export_dir = project_root / "export_for_ios"
+    l4d2_gi = export_dir / "left4dead2" / "gameinfo.txt"
+    hl2_gi = export_dir / "hl2" / "gameinfo.txt"
+
+    if l4d2_gi.exists():
+        app_l4d2_gi = app_dir / "left4dead2" / "gameinfo.txt"
+        app_l4d2_gi.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(l4d2_gi, app_l4d2_gi)
+        print("[+] Injected optimized left4dead2/gameinfo.txt inside app bundle")
+
+    if hl2_gi.exists():
+        app_hl2_gi = app_dir / "hl2" / "gameinfo.txt"
+        app_hl2_gi.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(hl2_gi, app_hl2_gi)
+        print("[+] Injected optimized hl2/gameinfo.txt inside app bundle")
+
+    # Inject core startup graphics and debug textures directly into the app bundle
+    for mod_name in ["left4dead2", "hl2"]:
+        src_mat = export_dir / mod_name / "materials"
+        if src_mat.exists():
+            dst_mat = app_dir / mod_name / "materials"
+            shutil.copytree(src_mat, dst_mat, dirs_exist_ok=True)
+            print(f"[+] Injected core materials into app bundle ({mod_name}/materials)")
+
+    # Also generate in export_for_ios so user can drop it into Documents
     if export_dir.exists():
         generate_settings_bin(export_dir / "settings.bin")
 
@@ -174,7 +187,7 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
         output_ipa.unlink()
 
     binary_names = {
-        'hl2_launcher', 'Left4Dead2', 'SDL2', 'libEGL', 'libGLESv2'
+        'hl2_launcher', 'SDL2', 'libEGL', 'libGLESv2'
     }
 
     with zipfile.ZipFile(output_ipa, 'w', zipfile.ZIP_DEFLATED) as zipf:
