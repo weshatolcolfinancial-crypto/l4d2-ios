@@ -74,27 +74,10 @@ jobs:
           cd build
           cmake --build . --config Release -- CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
 
-      - name: Package IPA
+      - name: Package Full Source Engine IPA
         id: package_ipa
         run: |
-          APP_DIR=$(find build -name "L4D2IOS.app" -type d | head -n 1)
-          if [ -z "$APP_DIR" ]; then
-            echo "Error: L4D2IOS.app not found!"
-            exit 1
-          fi
-          echo "Found App Bundle at: $APP_DIR"
-
-          # Ad-hoc sign for sideloading (AltStore / TrollStore / SideStore)
-          codesign --force --deep --sign - "$APP_DIR" || true
-
-          # Create Payload structure
-          mkdir -p ipa_out/Payload
-          cp -R "$APP_DIR" ipa_out/Payload/
-          cd ipa_out
-          zip -qr ../Left4Dead2.ipa Payload
-          cd ..
-          rm -rf ipa_out
-
+          python tools/assemble_full_ipa.py Left4Dead2.ipa
           echo "ipa_path=Left4Dead2.ipa" >> "$GITHUB_OUTPUT"
           ls -lh Left4Dead2.ipa
 
