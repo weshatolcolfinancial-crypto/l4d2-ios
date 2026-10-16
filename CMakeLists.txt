@@ -89,6 +89,7 @@ if(APPLE)
     find_library(UIKIT_LIB UIKit REQUIRED)
     find_library(FOUNDATION_LIB Foundation REQUIRED)
     find_library(QUARTZCORE_LIB QuartzCore REQUIRED)
+    find_library(COREGRAPHICS_LIB CoreGraphics REQUIRED)
     find_library(METAL_LIB Metal REQUIRED)
     find_library(METALKIT_LIB MetalKit REQUIRED)
     find_library(AVFOUNDATION_LIB AVFoundation REQUIRED)
@@ -99,6 +100,7 @@ if(APPLE)
         ${UIKIT_LIB}
         ${FOUNDATION_LIB}
         ${QUARTZCORE_LIB}
+        ${COREGRAPHICS_LIB}
         ${METAL_LIB}
         ${METALKIT_LIB}
         ${AVFOUNDATION_LIB}
