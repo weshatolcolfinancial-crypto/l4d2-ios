@@ -1,0 +1,29 @@
+# Build artifacts
+build/
+bin/
+obj/
+*.o
+*.obj
+*.a
+*.dylib
+*.app
+*.ipa
+Payload/
+
+# Steam & Local Assets (Do not commit game archives to git)
+export_for_ios/
+raw_steam_l4d2/
+tools/steamcmd/
+*.vpk
+*.bsp
+*.mdmp
+*.cache
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.xcuserstate
+xcuserdata/
+DerivedData/

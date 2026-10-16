@@ -1,0 +1,149 @@
+name: Build Left 4 Dead 2 iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish (default: v1.0.0-ios)'
+        required: false
+        type: string
+        default: 'v1.0.0-ios'
+      create_release:
+        description: 'Publish as GitHub Release'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-ios:
+    name: Build L4D2 iOS (arm64) & IPA
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools (CMake, Ninja)
+        run: |
+          brew install cmake ninja
+
+      - name: Select Xcode 16+
+        run: |
+          for xcode_path in /Applications/Xcode_16*.app /Applications/Xcode.app; do
+            if [ -d "$xcode_path" ]; then
+              echo "Selecting $xcode_path"
+              sudo xcode-select -s "$xcode_path"
+              break
+            fi
+          done
+          xcodebuild -version
+
+      - name: Configure CMake for iOS (arm64)
+        run: |
+          mkdir build && cd build
+          cmake .. \
+            -G Xcode \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/ios.toolchain.cmake \
+            -DPLATFORM=OS64 \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build iOS Application Bundle
+        run: |
+          cd build
+          cmake --build . --config Release -- -allowProvisioningUpdates || \
+          cmake --build . --config Release -- CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+      - name: Package IPA
+        id: package_ipa
+        run: |
+          APP_DIR=$(find build -name "L4D2IOS.app" -type d | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            echo "Error: L4D2IOS.app not found!"
+            exit 1
+          fi
+          echo "Found App Bundle at: $APP_DIR"
+
+          # Ad-hoc sign for sideloading (AltStore / TrollStore / SideStore)
+          codesign --force --deep --sign - "$APP_DIR" || true
+
+          # Create Payload structure
+          mkdir -p ipa_out/Payload
+          cp -R "$APP_DIR" ipa_out/Payload/
+          cd ipa_out
+          zip -qr ../Left4Dead2.ipa Payload
+          cd ..
+          rm -rf ipa_out
+
+          echo "ipa_path=Left4Dead2.ipa" >> "$GITHUB_OUTPUT"
+          ls -lh Left4Dead2.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Left4Dead2-iOS-IPA
+          path: ${{ steps.package_ipa.outputs.ipa_path }}
+          retention-days: 14
+
+      - name: Determine Release Tag
+        id: release_info
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.release_tag }}"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v1.0.0-ios"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        if: (github.event_name == 'workflow_dispatch' && inputs.create_release) || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: "Left 4 Dead 2 iOS ${{ steps.release_info.outputs.tag }}"
+          body: |
+            ## Left 4 Dead 2 Native iOS Port (ProMotion 120Hz Edition)
+
+            ### Features:
+            - **Native Apple Silicon ARM64 Execution:** Metal rendering backend with high-fidelity asset loading.
+            - **ProMotion 120Hz Display Support:** Silky smooth presentation on iPhone 13 Pro+ / iPad Pro.
+            - **Dynamic Floating Joystick:** Left thumbstick dynamically aligns with touch origin, featuring deadzone calibration.
+            - **L4D2 Combat Controls:**
+              - **FIRE** (`+attack`): Primary weapon discharge.
+              - **SHOVE / MELEE** (`+attack2`): Quick horde shove / melee swing for crowd clearance.
+              - **JUMP**, **CROUCH**, **RELOAD**, **USE** (revive/open doors/gas cans), and **FLASHLIGHT** (`impulse 100`).
+            - **5-Slot L4D2 Inventory Switcher:** Dedicated buttons for Primary, Secondary/Melee, Throwable, First Aid/Defib, and Pills/Adrenaline.
+            - **Diagnostics & Troubleshooting:** Live on-screen console (`LOGS` button), memory telemetry, and auto-logging to `Documents/debug.log`.
+
+            ### Installation:
+            1. Sideload `Left4Dead2.ipa` via **TrollStore**, **AltStore**, **SideStore**, or **LiveContainer**.
+            2. Launch the app once to generate sandbox directories.
+            3. Copy your Steam PC `left4dead2` and `hl2` content folders into the app's `Documents` folder via the **iOS Files app** or **iTunes / Finder File Sharing**.
+            4. Tap **RECHECK FILES** and survive the horde!
+          files: ${{ steps.package_ipa.outputs.ipa_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
