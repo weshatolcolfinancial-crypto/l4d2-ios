@@ -72,8 +72,7 @@ jobs:
       - name: Build iOS Application Bundle
         run: |
           cd build
-          cmake --build . --config Release -- -allowProvisioningUpdates || \
-          cmake --build . --config Release -- CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          cmake --build . --config Release -- CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
 
       - name: Package IPA
         id: package_ipa

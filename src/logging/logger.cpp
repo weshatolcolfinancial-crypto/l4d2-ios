@@ -7,9 +7,7 @@
 
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
-#if TARGET_OS_IPHONE
-#import <Foundation/Foundation.h>
-#endif
+#include <os/log.h>
 #endif
 
 namespace l4d2 {
@@ -121,12 +119,11 @@ void Logger::logV(LogLevel level, const char* tag, const char* fmt, va_list args
         m_fileStream.flush();
     }
 
-    // 3. Output to terminal / Xcode console / NSLog
-    std::string fullLine = "[" + entry.tag + "] " + message;
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-    NSLog(@"[%s] [%s] %s", lvlStr, entry.tag.c_str(), message.c_str());
-#else
-    std::cout << "[" << timestamp << "] [" << lvlStr << "] " << fullLine << std::endl;
+    // 3. Output to terminal / Xcode console / os_log
+    fprintf(stdout, "[%s] [%s] [%s] %s\n", timestamp.c_str(), lvlStr, entry.tag.c_str(), message.c_str());
+    fflush(stdout);
+#if defined(__APPLE__)
+    os_log_with_type(OS_LOG_DEFAULT, OS_LOG_TYPE_DEFAULT, "[%{public}s] [%{public}s] %{public}s", lvlStr, entry.tag.c_str(), message.c_str());
 #endif
 }
 
