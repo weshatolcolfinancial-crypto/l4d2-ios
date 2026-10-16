@@ -7,30 +7,75 @@
 	<key>CFBundleDisplayName</key>
 	<string>Left 4 Dead 2</string>
 	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
+	<string>hl2_launcher</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.valvesoftware.l4d2ios</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>Left 4 Dead 2</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>2.2.3.1</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>iPhoneOS</string>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	
+	<key>LSSupportsGameMode</key>
+	<true/>
+	<key>MinimumOSVersion</key>
+	<string>12.0</string>
+
+	<!-- App Icons Configuration -->
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon60x60</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon60x60</string>
+				<string>AppIcon76x76</string>
+				<string>AppIcon83.5x83.5</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>AppIcon60x60@2x.png</string>
+		<string>AppIcon60x60@3x.png</string>
+		<string>AppIcon76x76@2x~ipad.png</string>
+		<string>AppIcon83.5x83.5@2x~ipad.png</string>
+	</array>
+
 	<!-- 1. Enable 120Hz ProMotion Display -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 
-	<!-- 2. Enable Direct File Sharing via iOS Files App and iTunes USB -->
+	<!-- 2. Direct File Sharing via iOS Files App and iTunes USB -->
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>UISupportsDocumentBrowser</key>
 	<true/>
 
 	<!-- 3. Screen and UI presentation -->
@@ -40,6 +85,11 @@
 	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+		<integer>2</integer>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
