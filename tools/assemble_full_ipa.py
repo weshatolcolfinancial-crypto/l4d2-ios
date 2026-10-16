@@ -56,6 +56,25 @@ def patch_launcher_binary(binary_path: Path):
     with open(binary_path, 'wb') as f:
         f.write(data)
 
+def patch_scenefilecache_binary(dylib_path: Path):
+    with open(dylib_path, 'rb') as f:
+        data = bytearray(f.read())
+
+    # In CSceneFileCache::Init() at 0x40e4:
+    # 0x40e4: b.eq #0x4138 (0xa0 0x02 0x00 0x54)
+    # We change it to unconditional branch: b #0x4138 (0x15 0x00 0x00 0x14)
+    # And NOP the Warning/Error call at 0x40f4 (0x1f 0x20 0x03 0xd5)
+    # This allows scenes.image version 3 (L4D2 PC) to be accepted seamlessly!
+    if len(data) >= 0x40f8:
+        curr_instr = struct.unpack('<I', data[0x40e4:0x40e8])[0]
+        if curr_instr == 0x540002a0:
+            data[0x40e4:0x40e8] = b'\x15\x00\x00\x14' # b #0x4138
+            data[0x40f4:0x40f8] = b'\x1f\x20\x03\xd5' # ARM64 NOP
+            print("    [+] Patched libscenefilecache: Enabled L4D2 v3 scenes.image support")
+
+    with open(dylib_path, 'wb') as f:
+        f.write(data)
+
 def generate_settings_bin(output_path: Path):
     magic = b'\x6f' # 111 (SETTINGS_MAGIC)
     args = b"-game left4dead2 -fullscreen -noborder +fps_max 120".ljust(1024, b'\x00')
@@ -123,10 +142,14 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
         if dirty.is_dir() and "Frameworks" in str(dirty):
             shutil.rmtree(dirty)
 
-    # 4. Optimize and patch the launcher binary
+    # 4. Optimize and patch the launcher and engine binaries
     hl2_launcher = app_dir / "hl2_launcher"
     if hl2_launcher.exists():
         patch_launcher_binary(hl2_launcher)
+
+    scenefilecache_dylib = app_dir / "libscenefilecache.dylib"
+    if scenefilecache_dylib.exists():
+        patch_scenefilecache_binary(scenefilecache_dylib)
 
     # 5. Inject customized Info.plist for Left 4 Dead 2
     custom_plist = project_root / "ios" / "Info.plist"
