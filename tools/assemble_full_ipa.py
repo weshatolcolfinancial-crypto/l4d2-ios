@@ -151,6 +151,13 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
 
     # 7. Inject pre-configured settings.bin and commandline.txt
     generate_settings_bin(app_dir / "settings.bin")
+
+    # Inject fallback hl2/gameinfo.txt directly in the app bundle
+    app_hl2_gameinfo = app_dir / "hl2" / "gameinfo.txt"
+    app_hl2_gameinfo.parent.mkdir(parents=True, exist_ok=True)
+    with open(app_hl2_gameinfo, 'w', encoding='utf-8') as f:
+        f.write('"GameInfo"\n{\n\tgame\t\t"Left 4 Dead 2"\n\ttitle\t\t"LEFT 4 DEAD 2"\n\ttype\t\tmultiplayer_only\n\n\tFileSystem\n\t{\n\t\tSteamAppId\t\t550\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t|gameinfo_path|../left4dead2\n\t\t\tGame\t\t|gameinfo_path|.\n\t\t\tGame\t\tleft4dead2\n\t\t\tGame\t\thl2\n\t\t}\n\t}\n}\n')
+    print("[+] Injected fallback hl2/gameinfo.txt inside app bundle")
     
     # Also generate in export_for_ios so user can drop it into Documents
     export_dir = project_root / "export_for_ios"

@@ -89,6 +89,14 @@ def prepare_ios_staging(raw_steam_dir: Path, staging_dir: Path):
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.exe", "*.dll", "*.pdb", "DirectX*"))
         print(f"[+] {folder}/ staged successfully.")
 
+    # 1. Ensure fallback hl2/gameinfo.txt exists to prevent 'gameinfo.txt doesn't exist in subdirectory hl2' error
+    hl2_gameinfo = staging_dir / "hl2" / "gameinfo.txt"
+    if not hl2_gameinfo.exists():
+        hl2_gameinfo.parent.mkdir(parents=True, exist_ok=True)
+        with open(hl2_gameinfo, 'w', encoding='utf-8') as f:
+            f.write('"GameInfo"\n{\n\tgame\t\t"Left 4 Dead 2"\n\ttitle\t\t"LEFT 4 DEAD 2"\n\ttype\t\tmultiplayer_only\n\n\tFileSystem\n\t{\n\t\tSteamAppId\t\t550\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t|gameinfo_path|../left4dead2\n\t\t\tGame\t\t|gameinfo_path|.\n\t\t\tGame\t\tleft4dead2\n\t\t\tGame\t\thl2\n\t\t}\n\t}\n}\n')
+        print("[+] Generated fallback hl2/gameinfo.txt (prevents missing gameinfo error)")
+
     print("\n" + "=" * 60)
     print(" [✓] Left 4 Dead 2 iOS Assets Ready for Transfer!")
     print("=" * 60)
