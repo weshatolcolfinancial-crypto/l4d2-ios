@@ -196,6 +196,13 @@ def assemble_ipa(project_root: Path, output_ipa: Path):
             shutil.copytree(src_mat, dst_mat, dirs_exist_ok=True)
             print(f"[+] Injected core materials into app bundle ({mod_name}/materials)")
 
+    # Inject platform TrueType fonts for FreeType UI rendering
+    src_fonts = export_dir / "platform" / "resource" / "linux_fonts"
+    if src_fonts.exists():
+        dst_fonts = app_dir / "platform" / "resource" / "linux_fonts"
+        shutil.copytree(src_fonts, dst_fonts, dirs_exist_ok=True)
+        print("[+] Injected platform TrueType fonts into app bundle")
+
     # Also generate in export_for_ios so user can drop it into Documents
     if export_dir.exists():
         generate_settings_bin(export_dir / "settings.bin")
